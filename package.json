@@ -1,0 +1,23 @@
+{
+  "name": "futebolcrawler",
+  "version": "1.0.0",
+  "description": "Crawler para pegar notícias a partir do google trends",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MarceloZapatta/FutebolCrawler.git"
+  },
+  "author": "Marcelo Zapatta",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MarceloZapatta/FutebolCrawler/issues"
+  },
+  "homepage": "https://github.com/MarceloZapatta/FutebolCrawler#readme",
+  "dependencies": {
+    "puppeteer": "^19.3.0"
+  }
+}
