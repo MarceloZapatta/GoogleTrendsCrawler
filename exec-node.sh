@@ -1,0 +1,1 @@
+docker exec -it futebolcrawler_puppeteer /bin/bash

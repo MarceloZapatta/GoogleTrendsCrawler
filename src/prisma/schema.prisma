@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Topics {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  trendId    String
+  title      String
+  thumbnail  String
+  url        String   @unique
+  source     SourceType
+  category   CategoryType
+  tags       TagType[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@map("topics")
+}
+
+type SourceType {
+  id String @db.ObjectId
+  name String
+  createdAt  DateTime
+  updatedAt  DateTime
+}
+
+model Source {
+  id     String   @id @default(auto()) @map("_id") @db.ObjectId
+  name   String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@map("source")
+}
+
+type CategoryType {
+  id String @db.ObjectId
+  name String
+  createdAt  DateTime
+  updatedAt  DateTime
+}
+
+model Category {
+  id     String   @id @default(auto()) @map("_id") @db.ObjectId
+  name   String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@map("category")
+}
+
+type TagType {
+  id String @db.ObjectId
+  name String
+  createdAt  DateTime
+  updatedAt  DateTime
+}
+
+model Tag {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  name     String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@map("tag")
+}
