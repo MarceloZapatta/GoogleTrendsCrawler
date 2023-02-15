@@ -19,9 +19,9 @@ export default class PuppetterService {
 
   async initialize() {
     this.browser = await puppeteer.launch({
-      executablePath: "google-chrome",
+      // executablePath: "google-chrome",
       args: ["--no-sandbox"],
-      // headless: false,
+      headless: false,
       // userDataDir: USER_DATA_DIR_WSL
     });
 
@@ -42,21 +42,44 @@ export default class PuppetterService {
     }
 
     await this.goToTrendingSearchPage();
-    const feedItems = await this.getFeedItems();
+    let totalFeedItems = 0;
 
-    if (!feedItems) {
-      throw new Error("Unable to get feed items!");
+    for (let index = 1; index <= 3; index++) {
+      let feedItems = await this.getFeedItems();
+  
+      if (!feedItems) {
+        throw new Error("Unable to get feed items!");
+      }
+      
+      if (index > 1) {
+        feedItems = feedItems.slice(totalFeedItems, feedItems.length)
+      }
+      await this.getTrendsTopicsFromFeedItems(feedItems);
+
+      totalFeedItems += feedItems.length;
+
+      if (index < 3) {
+        await this.loadMoreFeedItems(totalFeedItems);
+      }
     }
 
-    this.getTrendsTopicsFromFeedItems(feedItems);
+    await this.browser.close();
+  }
+
+  async loadMoreFeedItems(totalFeedItems: number) {
+    if (!this.page) {
+      throw new Error("Page not initialized");
+    }
+
+    await this.page.waitForSelector('div.feed-load-more-button');
+    await this.page.click('div.feed-load-more-button');
+    await this.waitForFeedItemsLoaded(totalFeedItems);
   }
 
   async getTrendsTopicsFromFeedItems(feedItems: EvalElement[]) {
     if (!this.page) {
       return;
     }
-
-    const trends = [];
 
     for (let index = 0; index < feedItems.length; index++) {
       const feedItem = feedItems[index];
@@ -65,7 +88,6 @@ export default class PuppetterService {
       trend.id = feedItem.id;
 
       const selectorFeedItem = `[story-id="${feedItem.id}"]`;
-      await this.clickFeedItemHeader(selectorFeedItem);
 
       try {
         await this.waitForFeedItemFullyExpanded(selectorFeedItem);
@@ -78,10 +100,7 @@ export default class PuppetterService {
       trend.newsCards = await this.getTrendNewsCards(selectorFeedItem);
       trend.tags = await this.getTrendNewsTags(selectorFeedItem);
 
-      this.topicsService.create(trend);
-
-      trends.push(trend);
-
+      await this.topicsService.create(trend);
       await this.waitForFeedItemFullyUnexpanded(selectorFeedItem);
     }
   }
@@ -98,10 +117,8 @@ export default class PuppetterService {
     if (!this.page) {
       return;
     }
-
-    await new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 100);
-    });
+    
+    await this.clickFeedItemHeader(selectorFeedItem);
 
     await this.page.waitForFunction(
       `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') !== null`
@@ -116,19 +133,15 @@ export default class PuppetterService {
     if (!this.page) {
       return;
     }
+    
+    await this.clickFeedItemHeader(selectorFeedItem);
 
-    await new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 1000);
-    });
-
-    await this.page.waitForSelector(
-      `${selectorFeedItem} .feed-item-body.expanded`,
-      { timeout: 2000 }
+    await this.page.waitForFunction(
+      `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') === null`
     );
 
-    await this.page.waitForSelector(
-      `${selectorFeedItem} .feed-item-body.expanded .chips-list`,
-      { timeout: 2000 }
+    await this.page.waitForFunction(
+      `document.querySelector('${selectorFeedItem} .chips-list .list a') === null`
     );
   }
 
@@ -193,6 +206,7 @@ export default class PuppetterService {
     }
 
     const feedItemSelector = "feed-item";
+
     await this.page.waitForSelector(feedItemSelector);
 
     return this.page.$$eval(feedItemSelector, (elements) =>
@@ -200,6 +214,19 @@ export default class PuppetterService {
         id: element.getAttribute("story-id"),
         clickableDiv: element.querySelector(".feed-item-header"),
       }))
+    );
+  }
+
+  async waitForFeedItemsLoaded(totalFeedItems: number) {
+    if (!this.page) {
+      return;
+    }
+
+    await this.page.waitForFunction(
+      `document.querySelector('md-progress-circular') !== null`
+    );
+    await this.page.waitForFunction(
+      `document.querySelectorAll('feed-item').length > ${totalFeedItems}`
     );
   }
 }

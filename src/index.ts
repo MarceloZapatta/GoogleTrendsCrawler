@@ -9,11 +9,11 @@ const prisma = new PrismaClient();
 async function main() {
   const topicsService = new TopicsService(prisma);
   const puppetterService = new PuppetterService(topicsService);
+
   await puppetterService.initialize();
+  await puppetterService.fetchTopics();
 
-  const topics = await puppetterService.fetchTopics();
-
-  console.log(topics);
+  Promise.resolve();
 }
 
 main().finally(async () => await prisma.$disconnect());
