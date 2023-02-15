@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import PuppetterService from "./services/puppetter.service";
 import TopicsService from "./services/topics.service";
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 const prisma = new PrismaClient();
 
