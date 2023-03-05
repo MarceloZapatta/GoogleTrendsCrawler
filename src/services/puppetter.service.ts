@@ -1,3 +1,4 @@
+import { Category } from "@prisma/client";
 import puppeteer, { Browser, Page } from "puppeteer";
 import { Trend } from "../types/types";
 import TopicsService from "./topics.service";
@@ -41,25 +42,33 @@ export default class PuppetterService {
       throw new Error("Page not initialized");
     }
 
-    await this.goToTrendingSearchPage();
-    let totalFeedItems = 0;
+    const categories = await this.topicsService.getCategories();
 
-    for (let index = 1; index <= 3; index++) {
-      let feedItems = await this.getFeedItems();
-  
-      if (!feedItems) {
-        throw new Error("Unable to get feed items!");
-      }
-      
-      if (index > 1) {
-        feedItems = feedItems.slice(totalFeedItems, feedItems.length)
-      }
-      await this.getTrendsTopicsFromFeedItems(feedItems);
+    for (const category of categories) {
+      await this.goToTrendingSearchPage(category);
+      let totalFeedItems = 0;
 
-      totalFeedItems += feedItems.length;
+      for (let index = 1; index <= 3; index++) {
+        let feedItems = await this.getFeedItems();
 
-      if (index < 3) {
-        await this.loadMoreFeedItems(totalFeedItems);
+        if (!feedItems) {
+          throw new Error("Unable to get feed items!");
+        }
+
+        if (index > 1) {
+          feedItems = feedItems.slice(totalFeedItems, feedItems.length)
+        }
+        await this.getTrendsTopicsFromFeedItems(feedItems, category);
+
+        totalFeedItems += feedItems.length;
+
+        if (index < 3) {
+          const moreItems = await this.loadMoreFeedItems(totalFeedItems);
+
+          if (!moreItems) {
+            break;
+          }
+        }
       }
     }
 
@@ -71,12 +80,17 @@ export default class PuppetterService {
       throw new Error("Page not initialized");
     }
 
-    await this.page.waitForSelector('div.feed-load-more-button');
+    try {
+      await this.page.waitForSelector('div.feed-load-more-button');
+    } catch (error) {
+      return false;
+    }
+
     await this.page.click('div.feed-load-more-button');
-    await this.waitForFeedItemsLoaded(totalFeedItems);
+    return await this.waitForFeedItemsLoaded(totalFeedItems);
   }
 
-  async getTrendsTopicsFromFeedItems(feedItems: EvalElement[]) {
+  async getTrendsTopicsFromFeedItems(feedItems: EvalElement[], category: Category) {
     if (!this.page) {
       return;
     }
@@ -100,7 +114,7 @@ export default class PuppetterService {
       trend.newsCards = await this.getTrendNewsCards(selectorFeedItem);
       trend.tags = await this.getTrendNewsTags(selectorFeedItem);
 
-      await this.topicsService.create(trend);
+      await this.topicsService.create(trend, category);
       await this.waitForFeedItemFullyUnexpanded(selectorFeedItem);
     }
   }
@@ -117,7 +131,7 @@ export default class PuppetterService {
     if (!this.page) {
       return;
     }
-    
+
     await this.clickFeedItemHeader(selectorFeedItem);
 
     await this.page.waitForFunction(
@@ -133,7 +147,7 @@ export default class PuppetterService {
     if (!this.page) {
       return;
     }
-    
+
     await this.clickFeedItemHeader(selectorFeedItem);
 
     await this.page.waitForFunction(
@@ -190,13 +204,13 @@ export default class PuppetterService {
     );
   }
 
-  async goToTrendingSearchPage() {
+  async goToTrendingSearchPage(category: Category) {
     if (!this.page) {
       return;
     }
 
     return this.page.goto(
-      "https://trends.google.com.br/trends/trendingsearches/realtime?geo=BR&category=s"
+      `https://trends.google.com.br/trends/trendingsearches/realtime?geo=BR&category=${category.category}`
     );
   }
 
@@ -219,14 +233,21 @@ export default class PuppetterService {
 
   async waitForFeedItemsLoaded(totalFeedItems: number) {
     if (!this.page) {
-      return;
+      return false;
     }
 
     await this.page.waitForFunction(
       `document.querySelector('md-progress-circular') !== null`
     );
-    await this.page.waitForFunction(
-      `document.querySelectorAll('feed-item').length > ${totalFeedItems}`
-    );
+
+    try {
+      await this.page.waitForFunction(
+        `document.querySelectorAll('feed-item').length > ${totalFeedItems}`
+      );
+    } catch (error) {
+      return false;
+    }
+
+    return true;
   }
 }

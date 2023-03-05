@@ -42,15 +42,19 @@ model Source {
 type CategoryType {
   id String @db.ObjectId
   name String
+  order      Int
+  category   String
   createdAt  DateTime
   updatedAt  DateTime
 }
 
 model Category {
-  id     String   @id @default(auto()) @map("_id") @db.ObjectId
-  name   String   @unique
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique
+  order       Int      @unique
+  category    String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   @@map("category")
 }
 

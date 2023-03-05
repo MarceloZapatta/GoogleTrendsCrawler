@@ -1,4 +1,4 @@
-import { PrismaClient, Tag } from "@prisma/client";
+import { Category, PrismaClient, Tag } from "@prisma/client";
 import dayjs from "dayjs";
 import { NewsCard, Trend } from "../types/types";
 
@@ -9,7 +9,7 @@ export default class TopicsService {
     this.prisma = prisma;
   }
 
-  async create(trend: Trend) {
+  async create(trend: Trend, category: Category) {
     let tagsCreated: Tag[] = []
 
     if (trend.tags || trend.searchTerms) {
@@ -21,7 +21,7 @@ export default class TopicsService {
 
     if (trend.newsCards) {
       for (const newsCard of trend.newsCards) {
-        await this.createTopic(newsCard, tagsCreated, String(trend.id))
+        await this.createTopic(newsCard, tagsCreated, String(trend.id), category)
       }
     }
   }
@@ -46,35 +46,20 @@ export default class TopicsService {
     );
   }
 
-  async createTopic(newCard: NewsCard, tags: Tag[], trendId: string) {
-    const [category, source] = await this.prisma.$transaction([
-      this.prisma.category.upsert({
-        where: {
-          name: 'Esportes'
-        },
-        create: {
-          name: 'Esportes',
-          
-            createdAt: dayjs().format(),
-        },
-        update: {
-          name: 'Esportes'
-        }
-      }),
-      this.prisma.source.upsert({
-        where: {
-          name: String(newCard.siteName)
-        },
-        create: {
-          name: String(newCard.siteName),
-          
-            createdAt: dayjs().format(),
-        },
-        update: {
-          name: String(newCard.siteName)
-        }
-      })
-    ]);
+  async createTopic(newCard: NewsCard, tags: Tag[], trendId: string, category: Category) {
+    const source = await this.prisma.source.upsert({
+      where: {
+        name: String(newCard.siteName)
+      },
+      create: {
+        name: String(newCard.siteName),
+
+        createdAt: dayjs().format(),
+      },
+      update: {
+        name: String(newCard.siteName)
+      }
+    });
 
     return await this.prisma.$transaction([
       this.prisma.topics.upsert({
@@ -89,8 +74,7 @@ export default class TopicsService {
           source: source,
           category: category,
           tags: tags,
-          
-            createdAt: dayjs().format(),
+          createdAt: dayjs().format(),
         },
         update: {
           trendId: trendId,
@@ -102,5 +86,9 @@ export default class TopicsService {
         }
       })
     ]);
+  }
+
+  async getCategories(): Promise<Category[]> {
+    return await this.prisma.category.findMany({ orderBy: [{ order: 'asc' }] });
   }
 }
