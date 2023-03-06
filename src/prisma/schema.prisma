@@ -12,6 +12,7 @@ datasource db {
 
 model Topics {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug       String   @unique
   trendId    String
   title      String
   thumbnail  String
