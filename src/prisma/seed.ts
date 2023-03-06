@@ -10,10 +10,14 @@ async function main() {
       name: 'Principais notícias',
       order: 1,
       category: 'h',
+      slug: 'principais',
       createdAt: dayjs().format(),
     },
     update: {
-      name: 'Principais notícias'
+      name: 'Principais notícias',
+      order: 1,
+      category: 'h',
+      slug: 'principais',
     }
   });
   await prisma.category.upsert({
@@ -24,10 +28,14 @@ async function main() {
       name: 'Tecnologia',
       order: 2,
       category: 't',
+      slug: 'tecnologia',
       createdAt: dayjs().format(),
     },
     update: {
-      name: 'Tecnologia'
+      name: 'Tecnologia',
+      order: 2,
+      category: 't',
+      slug: 'tecnologia',
     }
   });
   await prisma.category.upsert({
@@ -38,10 +46,14 @@ async function main() {
       name: 'Entretenimento',
       order: 3,
       category: 'e',
+      slug: 'entretenimento',
       createdAt: dayjs().format(),
     },
     update: {
-      name: 'Entretenimento'
+      name: 'Entretenimento',
+      order: 3,
+      category: '3',
+      slug: 'entretenimento',
     }
   });
   await prisma.category.upsert({
@@ -52,10 +64,14 @@ async function main() {
       name: 'Esportes',
       order: 4,
       category: 's',
+      slug: 'esportes',
       createdAt: dayjs().format(),
     },
     update: {
-      name: 'Esportes'
+      name: 'Esportes',
+      order: 4,
+      category: 's',
+      slug: 'esportes',
     }
   });
   await prisma.category.upsert({
@@ -66,10 +82,14 @@ async function main() {
       name: 'Negócios',
       order: 5,
       category: 'b',
+      slug: 'negocios',
       createdAt: dayjs().format(),
     },
     update: {
-      name: 'Negócios'
+      name: 'Negócios',
+      order: 5,
+      category: 'b',
+      slug: 'negocios',
     }
   });
   await prisma.category.upsert({
@@ -80,10 +100,14 @@ async function main() {
       name: 'Saúde',
       order: 6,
       category: 'm',
+      slug: 'saude',
       createdAt: dayjs().format(),
     },
     update: {
-      name: 'Saúde'
+      name: 'Saúde',
+      order: 6,
+      category: 'm',
+      slug: 'saude',
     }
   });
 }
