@@ -13,9 +13,9 @@ export default class TopicsService {
   async create(trend: Trend, category: Category) {
     let tagsCreated: Tag[] = []
 
-    if (trend.tags || trend.searchTerms) {
+    if (trend.searchTerms) {
       let tags: string[] = [];
-      tags = [...trend.tags?.filter(Boolean) as string[], ...trend.searchTerms?.filter(Boolean) as string[]];
+      tags = [...trend.searchTerms?.filter(Boolean) as string[]];
 
       tagsCreated = await this.createTags(tags);
     }
@@ -28,21 +28,24 @@ export default class TopicsService {
   }
 
   async createTags(tags: string[]) {
-    const date = new Date();
     return await this.prisma.$transaction(
-      tags.map((tag) =>
-        this.prisma.tag.upsert({
+      tags.map((tag) => {
+        const slugTag = slugify(tag);
+        return this.prisma.tag.upsert({
           where: {
-            name: tag,
+            slug: slugTag
           },
           create: {
             name: tag,
+            slug: slugTag,
             createdAt: dayjs().format(),
           },
           update: {
             name: tag,
+            slug: slugTag,
           },
         })
+      }
       )
     );
   }
@@ -63,32 +66,34 @@ export default class TopicsService {
 
     const slugifiedTitle = await this.generateUniqueSlugName(String(newCard.title));
 
-    return await this.prisma.$transaction([
-      this.prisma.topics.upsert({
+    return await this.prisma.$transaction(async transaction => {
+      const topic = transaction.topics.findFirst({
         where: {
-          url: String(newCard.url)
-        },
-        create: {
-          trendId: trendId,
-          title: String(newCard.title),
-          slug: slugifiedTitle,
-          thumbnail: String(newCard.thumbnail),
           url: String(newCard.url),
-          source: source,
-          category: category,
-          tags: tags,
-          createdAt: dayjs().format(),
-        },
-        update: {
-          trendId: trendId,
-          title: String(newCard.title),
-          thumbnail: String(newCard.thumbnail),
-          source: source,
-          category: category,
-          tags: tags
+          category: {
+            is: {
+              id: category.id
+            }
+          }
         }
-      })
-    ]);
+      });
+
+      if (!topic) {
+        return await this.prisma.topics.create({
+          data: {
+            trendId: trendId,
+            title: String(newCard.title),
+            slug: slugifiedTitle,
+            thumbnail: newCard.thumbnail ? String(newCard.thumbnail) : null,
+            url: String(newCard.url),
+            source: source,
+            category: category,
+            tags: tags,
+            createdAt: dayjs().format(),
+          }
+        })
+      }
+    })
   }
 
   async getCategories(): Promise<Category[]> {
@@ -104,7 +109,8 @@ export default class TopicsService {
       const shortTitle = title.substring(0, 30);
       const shortTitleAttempts = shortTitle + (attempts > 0 ? ` ${attempts}` : '')
       slugifiedTitle = slugify(shortTitleAttempts, {
-        remove: /\:/
+        remove: /[^A-Za-z0-9\ ]/g,
+        lower: true
       });
 
       topic = await this.prisma.topics.findFirst({

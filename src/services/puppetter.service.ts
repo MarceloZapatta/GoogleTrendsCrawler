@@ -112,7 +112,6 @@ export default class PuppetterService {
 
       trend.searchTerms = await this.getTrendCategories(selectorFeedItem);
       trend.newsCards = await this.getTrendNewsCards(selectorFeedItem);
-      trend.tags = await this.getTrendNewsTags(selectorFeedItem);
 
       await this.topicsService.create(trend, category);
       await this.waitForFeedItemFullyUnexpanded(selectorFeedItem);
@@ -188,19 +187,6 @@ export default class PuppetterService {
           thumbnail: newsCard.querySelector("img")?.getAttribute("src"),
           url: newsCard.getAttribute("href"),
         }))
-    );
-  }
-
-  async getTrendNewsTags(selectorFeedItem: string) {
-    if (!this.page) {
-      return;
-    }
-
-    return this.page.$$eval(`${selectorFeedItem} .chips-list .list a`, (tags) =>
-      tags
-        .filter(Boolean)
-        .map((tag) => tag.textContent?.trim())
-        .filter(Boolean)
     );
   }
 

@@ -52,7 +52,7 @@ async function main() {
     update: {
       name: 'Entretenimento',
       order: 3,
-      category: '3',
+      category: 'e',
       slug: 'entretenimento',
     }
   });
