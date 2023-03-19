@@ -2,28 +2,6 @@
 version: '3.5'
 
 services:
-  mongo:
-    container_name: futebolcrawler_mongo
-    image: mongo
-    restart: always
-    # environment:
-    #   MONGO_INITDB_ROOT_USERNAME: root
-    #   MONGO_INITDB_ROOT_PASSWORD: example
-    # volumes:
-      # - $PWD/.docker/mongo/replica.key:/data/replica.key
-    expose: 
-      - 27017
-    ports:
-     - 27017:27017
-    command: --bind_ip_all --replSet rs0
-    # entrypoint: [ "docker-entrypoint.sh" ]
-  mongo2:
-    container_name: futebolcrawler_mongo2
-    image: mongo
-    depends_on:
-      - mongo
-    restart: "no"
-    entrypoint: [ "bash", "-c", "sleep 10 && mongosh --host mongo:27017 --eval 'rs.initiate()'", "bash" ]
   puppeteer:
     container_name: futebolcrawler_puppeteer
     build:

@@ -46,6 +46,7 @@ export default class PuppetterService {
 
     for (const category of categories) {
       await this.goToTrendingSearchPage(category);
+
       let totalFeedItems = 0;
 
       for (let index = 1; index <= 3; index++) {
@@ -106,7 +107,6 @@ export default class PuppetterService {
       try {
         await this.waitForFeedItemFullyExpanded(selectorFeedItem);
       } catch (error) {
-        console.error(error);
         continue;
       }
 

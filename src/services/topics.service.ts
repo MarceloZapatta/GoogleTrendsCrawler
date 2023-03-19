@@ -64,10 +64,10 @@ export default class TopicsService {
       }
     });
 
-    const slugifiedTitle = await this.generateUniqueSlugName(String(newCard.title));
+    const slugifiedTitle = await this.generateUniqueSlugName(String(newCard.title), category.id);
 
     return await this.prisma.$transaction(async transaction => {
-      const topic = transaction.topics.findFirst({
+      const topic = await transaction.topics.findFirst({
         where: {
           url: String(newCard.url),
           category: {
@@ -100,7 +100,7 @@ export default class TopicsService {
     return await this.prisma.category.findMany({ orderBy: [{ order: 'asc' }] });
   }
 
-  async generateUniqueSlugName(title: string): Promise<string> {
+  async generateUniqueSlugName(title: string, categoryId: string): Promise<string> {
     let topic: Topics | null = null;
     let attempts = 0;
     let slugifiedTitle = '';
@@ -115,7 +115,12 @@ export default class TopicsService {
 
       topic = await this.prisma.topics.findFirst({
         where: {
-          slug: slugifiedTitle
+          slug: slugifiedTitle,
+          category: {
+            is: {
+              id: categoryId
+            }
+          }
         }
       });
       attempts++;
