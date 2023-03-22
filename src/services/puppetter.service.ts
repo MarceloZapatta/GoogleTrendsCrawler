@@ -20,7 +20,7 @@ export default class PuppetterService {
 
   async initialize() {
     this.browser = await puppeteer.launch({
-      args: ["--no-sandbox"]
+      args: ["--no-sandbox", "--disable-extensions"]
     });
 
     await this.newPage();
