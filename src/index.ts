@@ -7,13 +7,17 @@ dotenv.config()
 const prisma = new PrismaClient();
 
 async function main() {
-  const topicsService = new TopicsService(prisma);
-  const puppetterService = new PuppetterService(topicsService);
-  
-  await puppetterService.initialize();
-  await puppetterService.fetchTopics();
+  try {
+    const topicsService = new TopicsService(prisma);
+    const puppetterService = new PuppetterService(topicsService);
 
-  Promise.resolve();
+    await puppetterService.initialize();
+    await puppetterService.fetchTopics();
+
+    Promise.resolve();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 main().finally(async () => await prisma.$disconnect());
