@@ -20,10 +20,7 @@ export default class PuppetterService {
 
   async initialize() {
     this.browser = await puppeteer.launch({
-      // executablePath: "google-chrome",
-      args: ["--no-sandbox"],
-      headless: false,
-      // userDataDir: USER_DATA_DIR_WSL
+      args: ["--no-sandbox"]
     });
 
     await this.newPage();
