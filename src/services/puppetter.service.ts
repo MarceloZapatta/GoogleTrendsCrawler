@@ -46,7 +46,7 @@ export default class PuppetterService {
 
       let totalFeedItems = 0;
 
-      for (let index = 1; index <= 3; index++) {
+      for (let index = 1; index <= 2; index++) {
         let feedItems = await this.getFeedItems();
 
         if (!feedItems) {
