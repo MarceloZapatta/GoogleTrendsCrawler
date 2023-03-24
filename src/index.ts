@@ -20,9 +20,6 @@ async function main() {
     console.log(error.stack)
     console.error(error.stack)
     console.log(error.lineNumber)
-    console.log(error.getCode())
-    console.log(error.getLine())
-    console.log(error.getFile())
   }
 }
 
