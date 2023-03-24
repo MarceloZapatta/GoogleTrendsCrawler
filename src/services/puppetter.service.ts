@@ -2,7 +2,6 @@ import { Category } from "@prisma/client";
 import puppeteer, { Browser, Page } from "puppeteer";
 import { Trend } from "../types/types";
 import TopicsService from "./topics.service";
-const fs = require("fs");
 
 interface EvalElement {
   id: string | null;
@@ -20,6 +19,7 @@ export default class PuppetterService {
 
   async initialize() {
     this.browser = await puppeteer.launch({
+      headless: process.env.HEADLESS === 'true' || true,
       args: ["--no-sandbox", "--disable-extensions"]
     });
 
@@ -39,6 +39,17 @@ export default class PuppetterService {
       throw new Error("Page not initialized");
     }
 
+    // const categories = [
+    //   {
+    //     id: '64171dd58fc3bedd9c56149b',
+    //     name: 'Saude',
+    //     slug: 'saude',
+    //     order: 3,
+    //     category: 'm',
+    //     createdAt: new Date('2023-03-19T14:36:05.000Z'),
+    //     updatedAt: new Date('2023-03-19T14:36:05.407Z')
+    //   }
+    // ];
     const categories = await this.topicsService.getCategories();
 
     for (const category of categories) {
@@ -56,11 +67,12 @@ export default class PuppetterService {
         if (index > 1) {
           feedItems = feedItems.slice(totalFeedItems, feedItems.length)
         }
+
         await this.getTrendsTopicsFromFeedItems(feedItems, category);
 
         totalFeedItems += feedItems.length;
 
-        if (index < 3) {
+        if (index < 2) {
           const moreItems = await this.loadMoreFeedItems(totalFeedItems);
 
           if (!moreItems) {
@@ -79,7 +91,7 @@ export default class PuppetterService {
     }
 
     try {
-      await this.page.waitForSelector('div.feed-load-more-button');
+      await this.page.waitForSelector('div.feed-load-more-button', { timeout: 500 });
     } catch (error) {
       return false;
     }
@@ -104,6 +116,8 @@ export default class PuppetterService {
       try {
         await this.waitForFeedItemFullyExpanded(selectorFeedItem);
       } catch (error) {
+        console.error('Error ao esperar feedItem Fully Expanded: ' + selectorFeedItem);
+        console.error(error);
         continue;
       }
 
@@ -111,6 +125,7 @@ export default class PuppetterService {
       trend.newsCards = await this.getTrendNewsCards(selectorFeedItem);
 
       await this.topicsService.create(trend, category);
+      console.log(`Trend de id inserida: ${trend.id}. Categoria: ${category.name}`);
       await this.waitForFeedItemFullyUnexpanded(selectorFeedItem);
     }
   }
@@ -129,13 +144,10 @@ export default class PuppetterService {
     }
 
     await this.clickFeedItemHeader(selectorFeedItem);
-
+    const waitForNewsCardLinks = `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') !== null`
     await this.page.waitForFunction(
-      `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') !== null`
-    );
-
-    await this.page.waitForFunction(
-      `document.querySelector('${selectorFeedItem} .chips-list .list a') !== null`
+      waitForNewsCardLinks,
+      {timeout: 10000}
     );
   }
 
@@ -146,12 +158,9 @@ export default class PuppetterService {
 
     await this.clickFeedItemHeader(selectorFeedItem);
 
+    const waitForZeroNewsCardLinks = `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') === null`
     await this.page.waitForFunction(
-      `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') === null`
-    );
-
-    await this.page.waitForFunction(
-      `document.querySelector('${selectorFeedItem} .chips-list .list a') === null`
+      waitForZeroNewsCardLinks
     );
   }
 
@@ -175,8 +184,10 @@ export default class PuppetterService {
       return;
     }
 
+    const selectorNewsCards = `${selectorFeedItem} feed-item-carousel .carousel-items a`;
+
     return this.page.$$eval(
-      `${selectorFeedItem} feed-item-carousel .carousel-items a`,
+      selectorNewsCards,
       (newsCards) =>
         newsCards.filter(Boolean).map((newsCard) => ({
           title: newsCard.querySelector(".item-title")?.textContent,
@@ -192,9 +203,9 @@ export default class PuppetterService {
       return;
     }
 
-    return this.page.goto(
-      `https://trends.google.com.br/trends/trendingsearches/realtime?geo=BR&category=${category.category}`
-    );
+    const googleTrendsUrlPerCategory = `https://trends.google.com.br/trends/trendingsearches/realtime?geo=BR&category=${category.category}`;
+
+    return this.page.goto(googleTrendsUrlPerCategory);
   }
 
   async getFeedItems(): Promise<EvalElement[] | undefined> {
@@ -203,7 +214,6 @@ export default class PuppetterService {
     }
 
     const feedItemSelector = "feed-item";
-
     await this.page.waitForSelector(feedItemSelector);
 
     return this.page.$$eval(feedItemSelector, (elements) =>
@@ -219,14 +229,16 @@ export default class PuppetterService {
       return false;
     }
 
-    await this.page.waitForFunction(
-      `document.querySelector('md-progress-circular') !== null`
-    );
+    const waitForSpinnerLoaderStopped = `document.querySelector('md-progress-circular') !== null`
+    await this.page.waitForFunction(waitForSpinnerLoaderStopped);
 
     try {
+      const waitForNumberNewsBecameBiggerThanLastPage = `document.querySelectorAll('feed-item').length > ${totalFeedItems}`
       await this.page.waitForFunction(
-        `document.querySelectorAll('feed-item').length > ${totalFeedItems}`
-      );
+        waitForNumberNewsBecameBiggerThanLastPage
+      , {
+        timeout: 3000
+      });
     } catch (error) {
       return false;
     }
