@@ -11,8 +11,11 @@ async function main() {
     const topicsService = new TopicsService(prisma);
     const puppetterService = new PuppetterService(topicsService);
 
+    console.log('Connecting database...');
     await puppetterService.initialize();
+    console.log('Running...');
     await puppetterService.fetchTopics();
+    console.log('Finished!');
 
     Promise.resolve();
   } catch (error: any|Error) {

@@ -52,6 +52,10 @@ export default class PuppetterService {
     // ];
     const categories = await this.topicsService.getCategories();
 
+    if (categories.length <= 0) {
+      console.log('No categories fetched from database.');
+    }
+
     for (const category of categories) {
       await this.goToTrendingSearchPage(category);
 
