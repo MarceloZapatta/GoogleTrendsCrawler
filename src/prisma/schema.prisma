@@ -15,6 +15,8 @@ model Topics {
   slug       String
   trendId    String
   title      String
+  author String?
+  description String?
   thumbnail  String?
   url        String
   source     SourceType

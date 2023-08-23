@@ -10,4 +10,6 @@ export interface NewsCard {
   siteName: string | null | undefined;
   thumbnail: string | null | undefined;
   url: string | null | undefined;
+  description?: string;
+  author?: string;
 }
