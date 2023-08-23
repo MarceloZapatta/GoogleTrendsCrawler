@@ -98,8 +98,8 @@ export default class TopicsService {
           data: {
             trendId: trendId,
             title: String(newCard.title),
-            description: String(newCard.description),
-            author: String(newCard.author),
+            description: newCard.description ? newCard.description : null,
+            author: newCard.author ? newCard.author : null,
             slug: slugifiedTitle,
             thumbnail: newCard.thumbnail ? String(newCard.thumbnail) : null,
             url: String(newCard.url),
