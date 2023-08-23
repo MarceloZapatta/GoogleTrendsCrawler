@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import slugify from "slugify";
 import { NewsCard, Trend } from "../types/types";
 import urlMetadata from "url-metadata";
+import { decode } from "html-entities";
 
 export default class TopicsService {
   private prisma: PrismaClient;
@@ -123,7 +124,7 @@ export default class TopicsService {
         }
 
         if (metadata.description) {
-          newCard.description = String(metadata.description);
+          newCard.description = decode(String(metadata.description));
         }
 
         if (

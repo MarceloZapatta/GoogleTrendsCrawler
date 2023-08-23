@@ -23,6 +23,7 @@
     "@types/node": "^18.13.0",
     "dayjs": "^1.11.7",
     "dotenv": "^16.0.3",
+    "html-entities": "^2.4.0",
     "puppeteer": "^19.3.0",
     "slugify": "^1.6.5",
     "ts-node": "^10.9.1",
