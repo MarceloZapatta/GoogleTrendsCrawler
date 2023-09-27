@@ -19,8 +19,18 @@ export default class PuppetterService {
 
   async initialize() {
     this.browser = await puppeteer.launch({
-      headless: process.env.HEADLESS === 'true' || true,
-      args: ["--no-sandbox", "--disable-extensions"]
+      headless: process.env.HEADLESS === "true" || true,
+      args: [
+        "--no-sandbox",
+        "--disable-extensions",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--no-first-run",
+        "--no-zygote",
+        "--single-process",
+        "--disable-gpu",
+      ],
     });
 
     await this.newPage();
@@ -53,7 +63,7 @@ export default class PuppetterService {
     const categories = await this.topicsService.getCategories();
 
     if (categories.length <= 0) {
-      console.log('No categories fetched from database.');
+      console.log("No categories fetched from database.");
     }
 
     for (const category of categories) {
@@ -69,7 +79,7 @@ export default class PuppetterService {
         }
 
         if (index > 1) {
-          feedItems = feedItems.slice(totalFeedItems, feedItems.length)
+          feedItems = feedItems.slice(totalFeedItems, feedItems.length);
         }
 
         await this.getTrendsTopicsFromFeedItems(feedItems, category);
@@ -95,16 +105,21 @@ export default class PuppetterService {
     }
 
     try {
-      await this.page.waitForSelector('div.feed-load-more-button', { timeout: 500 });
+      await this.page.waitForSelector("div.feed-load-more-button", {
+        timeout: 500,
+      });
     } catch (error) {
       return false;
     }
 
-    await this.page.click('div.feed-load-more-button');
+    await this.page.click("div.feed-load-more-button");
     return await this.waitForFeedItemsLoaded(totalFeedItems);
   }
 
-  async getTrendsTopicsFromFeedItems(feedItems: EvalElement[], category: Category) {
+  async getTrendsTopicsFromFeedItems(
+    feedItems: EvalElement[],
+    category: Category
+  ) {
     if (!this.page) {
       return;
     }
@@ -120,7 +135,9 @@ export default class PuppetterService {
       try {
         await this.waitForFeedItemFullyExpanded(selectorFeedItem);
       } catch (error) {
-        console.error('Error ao esperar feedItem Fully Expanded: ' + selectorFeedItem);
+        console.error(
+          "Error ao esperar feedItem Fully Expanded: " + selectorFeedItem
+        );
         console.error(error);
         continue;
       }
@@ -129,7 +146,9 @@ export default class PuppetterService {
       trend.newsCards = await this.getTrendNewsCards(selectorFeedItem);
 
       await this.topicsService.create(trend, category);
-      console.log(`Trend de id inserida: ${trend.id}. Categoria: ${category.name}`);
+      console.log(
+        `Trend de id inserida: ${trend.id}. Categoria: ${category.name}`
+      );
       await this.waitForFeedItemFullyUnexpanded(selectorFeedItem);
     }
   }
@@ -148,11 +167,8 @@ export default class PuppetterService {
     }
 
     await this.clickFeedItemHeader(selectorFeedItem);
-    const waitForNewsCardLinks = `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') !== null`
-    await this.page.waitForFunction(
-      waitForNewsCardLinks,
-      {timeout: 10000}
-    );
+    const waitForNewsCardLinks = `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') !== null`;
+    await this.page.waitForFunction(waitForNewsCardLinks, { timeout: 10000 });
   }
 
   async waitForFeedItemFullyUnexpanded(selectorFeedItem: string) {
@@ -162,10 +178,8 @@ export default class PuppetterService {
 
     await this.clickFeedItemHeader(selectorFeedItem);
 
-    const waitForZeroNewsCardLinks = `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') === null`
-    await this.page.waitForFunction(
-      waitForZeroNewsCardLinks
-    );
+    const waitForZeroNewsCardLinks = `document.querySelector('${selectorFeedItem} .feed-item-carousel .carousel-items a') === null`;
+    await this.page.waitForFunction(waitForZeroNewsCardLinks);
   }
 
   async getTrendCategories(selectorFeedItem: string) {
@@ -190,15 +204,13 @@ export default class PuppetterService {
 
     const selectorNewsCards = `${selectorFeedItem} feed-item-carousel .carousel-items a`;
 
-    return this.page.$$eval(
-      selectorNewsCards,
-      (newsCards) =>
-        newsCards.filter(Boolean).map((newsCard) => ({
-          title: newsCard.querySelector(".item-title")?.textContent,
-          siteName: newsCard.querySelector(".image-text")?.textContent,
-          thumbnail: newsCard.querySelector("img")?.getAttribute("src"),
-          url: newsCard.getAttribute("href"),
-        }))
+    return this.page.$$eval(selectorNewsCards, (newsCards) =>
+      newsCards.filter(Boolean).map((newsCard) => ({
+        title: newsCard.querySelector(".item-title")?.textContent,
+        siteName: newsCard.querySelector(".image-text")?.textContent,
+        thumbnail: newsCard.querySelector("img")?.getAttribute("src"),
+        url: newsCard.getAttribute("href"),
+      }))
     );
   }
 
@@ -233,16 +245,17 @@ export default class PuppetterService {
       return false;
     }
 
-    const waitForSpinnerLoaderStopped = `document.querySelector('md-progress-circular') !== null`
+    const waitForSpinnerLoaderStopped = `document.querySelector('md-progress-circular') !== null`;
     await this.page.waitForFunction(waitForSpinnerLoaderStopped);
 
     try {
-      const waitForNumberNewsBecameBiggerThanLastPage = `document.querySelectorAll('feed-item').length > ${totalFeedItems}`
+      const waitForNumberNewsBecameBiggerThanLastPage = `document.querySelectorAll('feed-item').length > ${totalFeedItems}`;
       await this.page.waitForFunction(
-        waitForNumberNewsBecameBiggerThanLastPage
-      , {
-        timeout: 3000
-      });
+        waitForNumberNewsBecameBiggerThanLastPage,
+        {
+          timeout: 3000,
+        }
+      );
     } catch (error) {
       return false;
     }
